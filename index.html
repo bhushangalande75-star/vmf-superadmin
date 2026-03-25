@@ -409,17 +409,28 @@ let allUsers = [], allSocieties = [], usersFilter = 'all', dashPeriod = 'day';
 let delUserId = null, delSocId = null, curReport = 'societies';
 
 // AUTH
-function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  if (u === 'superadmin' && p === 'Ayan@2020') {
+async function doLogin() {
+  const phone = document.getElementById('loginUser').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginError');
+  if (!phone || !pass) { err.textContent = 'Enter phone and password.'; err.style.display = 'block'; return; }
+  try {
+    const r = await fetch(API + '/user/login', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ phone, password: pass }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Invalid credentials');
+    if (d.role !== 'superadmin') throw new Error('Access denied. Superadmin only.');
+    err.style.display = 'none';
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadDashboard();
-  } else {
-    const e = document.getElementById('loginError');
-    e.style.display = 'block';
-    setTimeout(() => e.style.display = 'none', 3000);
+  } catch(e) {
+    err.textContent = e.message || 'Invalid credentials. Please try again.';
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 4000);
   }
 }
 function doLogout() {
